@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="apple-touch-icon" sizes="180x180" href="serieB.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="serieB.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="serieB.png">
-  <title>Serie B</title>
+  <link rel="apple-touch-icon" sizes="180x180" href="serieA16">
+  <link rel="icon" type="image/png" sizes="32x32" href="serieA16">
+  <link rel="icon" type="image/png" sizes="16x16" href="serieA16">
+  <title>Serie A</title>
 
   <style>
     :root {
@@ -16,16 +16,13 @@
       --muted:#94a3b8;
       --danger:#ef4444;
     }
-
     *{ box-sizing:border-box; font-family:Inter,Segoe UI,Roboto,Arial }
-
     body{
       margin:0;
       background:#071024;
       color:#e6f0fa;
       padding:14px;
     }
-
     .wrap{
       background:rgba(255,255,255,0.03);
       border-radius:12px;
@@ -33,13 +30,11 @@
       max-width:900px;
       margin:auto;
     }
-
     h1{
       margin:0 0 40px;
       font-size:20px;
       text-align:center;
     }
-
     .topbar{
       display:flex;
       gap:8px;
@@ -47,7 +42,6 @@
       justify-content:center;
       margin-bottom:12px;
     }
-
     button{
       background:var(--accent);
       border:none;
@@ -68,44 +62,26 @@
       background:var(--danger);
       color:white;
     }
-
     table{
       width:100%;
       border-collapse:collapse;
       table-layout:fixed;
       font-size:15px;
     }
-
     th,td{
       padding:6px 4px;
       text-align:center;
       border-bottom:1px solid rgba(255,255,255,0.05);
       word-wrap:break-word;
     }
-
     td.editable{ cursor:pointer }
-
     tr.selected{ background:rgba(14,165,164,0.1) }
     .top1{ background:rgba(0, 255, 94, 0.49) !important }
     .bottom2{ background:rgba(255, 0, 0, 0.341) !important }
 
-    @media(max-width:600px){
-      table{ font-size:12px }
-      th,td{ padding:4px 2px }
-      th:nth-child(2){ width:90px }
-      th:nth-child(1), th:nth-child(3), th:nth-child(8){ width:35px }
-    }
-
-    footer{
-      text-align:center;
-      margin-top:12px;
-      font-size:12px;
-      color:var(--muted);
-    }
-    img {
-    width: 40px;
-    position: static;
-    margin: 0px 0px -14px 0px;
+    img{
+      width: 40px;
+      margin: 0px 0px -14px 0px;
     }
   </style>
 </head>
@@ -113,7 +89,7 @@
 <body>
 
   <div class="wrap">
-    <h1>Classificação <img src="br 2.png" alt=""></h1>
+    <h1>Classificação <img src="serieA.png" alt=""></h1>
 
     <div class="topbar">
       <button id="addBtn">Inserir</button>
@@ -126,15 +102,16 @@
     <table id="table">
       <thead>
         <tr>
-          <th>Pos</th>
-          <th>Nome</th>
-          <th>Pts</th>
-          <th>Jog</th>
-          <th>Vit</th>
-          <th>Emp</th>
-          <th>Der</th>
-          <th>Gols</th>
-          <th>Sal</th>
+          <th>POS</th>
+          <th>NOME</th>
+          <th>PTS</th>
+          <th>JG</th>
+          <th>V</th>
+          <th>E</th>
+          <th>D</th>
+          <th>G M</th>
+          <th>G S</th>
+          <th>S G</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -146,11 +123,11 @@
   <!-- jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-  <!-- AutoTable (necessário para PDF moderno) -->
+  <!-- AutoTable -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
   <script>
-    const STORAGE_KEY="Serie_B";
+    const STORAGE_KEY="Serie_A";
     const tbody=document.querySelector("#table tbody");
     const byId=id=>document.getElementById(id);
 
@@ -160,9 +137,9 @@
 
     function compute(data){
       data.forEach(t=>{
-        t.jogos=(t.vitorias|0)+(t.empates|0)+(t.derrotas|0);
-        t.pontos=(t.vitorias|0)*3 + (t.empates|0);
-        t.saldo=(t.gols|0);
+        t.jogos = (t.vitorias|0) + (t.empates|0) + (t.derrotas|0);
+        t.pontos = (t.vitorias|0) * 3 + (t.empates|0);
+        t.saldo = (t.gols|0) - (t.sofridos|0);
       });
 
       data.sort((a,b)=>
@@ -170,6 +147,7 @@
         b.vitorias-a.vitorias ||
         b.empates-a.empates ||
         a.derrotas-b.derrotas ||
+        b.saldo-a.saldo ||
         b.gols-a.gols
       );
 
@@ -200,6 +178,7 @@
           <td class="editable" data-field="empates">${t.empates}</td>
           <td class="editable" data-field="derrotas">${t.derrotas}</td>
           <td class="editable" data-field="gols">${t.gols}</td>
+          <td class="editable" data-field="sofridos">${t.sofridos ?? 0}</td>
           <td>${t.saldo}</td>
         `;
 
@@ -235,7 +214,15 @@
 
     byId("addBtn").onclick=()=>{
       const id=randomId();
-      state.data.push({ id,nome:`Time ${id}`, vitorias:0,empates:0,derrotas:0, gols:0 });
+      state.data.push({
+        id,
+        nome:`Time ${id}`,
+        vitorias:0,
+        empates:0,
+        derrotas:0,
+        gols:0,
+        sofridos:0
+      });
       render();
     };
 
@@ -249,7 +236,14 @@
 
     byId("resetPointsBtn").onclick=()=>{
       if(!confirm("Resetar pontos, jogos e gols?")) return;
-      state.data=state.data.map(t=>({ ...t, vitorias:0,empates:0,derrotas:0, gols:0 }));
+      state.data=state.data.map(t=>({
+        ...t,
+        vitorias:0,
+        empates:0,
+        derrotas:0,
+        gols:0,
+        sofridos:0
+      }));
       render();
     };
 
@@ -259,28 +253,23 @@
       render();
     };
 
-    /* ==========================
-       PDF MODERNO E PROFISSIONAL
-       ========================== */
+    /* PDF */
     byId("exportPdfBtn").onclick = () => {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation:"portrait", unit:"pt", format:"a4" });
 
-      // Cabeçalho moderno
       doc.setFillColor(14,165,164);
       doc.rect(0, 0, 600, 70, "F");
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(26);
       doc.setTextColor(255,255,255);
-      doc.text("CLASSIFICAÇÃO DO CAMPEONATO INTERNO 2ª DIVISÃO", 40, 45);
+      doc.text("CLASSIFICAÇÃO DO CAMPEONATO INTERNO SERIE B", 40, 45);
 
-      // Data
       const dataHoje = new Date().toLocaleDateString("pt-BR");
       doc.setFontSize(11);
       doc.text(`Gerado em: ${dataHoje}`, 40, 65);
 
-      // Tabela
       const body = state.data.map((t, idx) => [
         idx + 1,
         t.nome,
@@ -290,38 +279,34 @@
         t.empates,
         t.derrotas,
         t.gols,
+        t.sofridos,
         t.saldo
       ]);
 
       doc.autoTable({
         startY: 90,
-        head: [[ "Pos","Nome","Pts","Jog","Vit","Emp","Der","Gols","Sal" ]],
+        head: [[ "Pos","Nome","Pts","Jog","Vit","Emp","Der","Gols","Sofr","Sal" ]],
         body: body,
         theme: "striped",
-
         styles: {
           fontSize: 11,
           cellPadding: 6,
           valign: "middle",
           halign: "center",
         },
-
         headStyles: {
           fillColor: [15,23,36],
           textColor: [255,255,255],
           fontSize: 12,
         },
-
         alternateRowStyles: {
           fillColor: [240,240,240],
         },
-
         columnStyles: {
           1: { halign:"left" }
         },
       });
 
-      // Rodapé
       doc.setFontSize(10);
       doc.setTextColor(120);
       doc.text("Sistema de Classificação Automática © 2025", 40, doc.lastAutoTable.finalY + 30);
@@ -333,8 +318,3 @@
   </script>
 </body>
 </html>
-
-
-
-
-
